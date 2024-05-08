@@ -190,29 +190,95 @@ public class BaseDeConocimientos {
 
         System.out.println("Lista doblemente enlazada de hipótesis:");
         System.out.println(hypothesisList + "\n");
-        
-        for (Hypothesis hypothesis : hypotheses) {
-            boolean valid = isHypothesisValid(hypothesis, new ArrayList<>());
 
-            if (valid) {
-                System.out.println("La hipótesis " + hypothesis + " es correcta.");
-                System.out.print("Reglas aplicadas: ");
-                conditionIterator = hypothesis.conditions.iterator(); // Inicialización de conditionIterator
-                printAppliedRules(hypothesis, new ArrayList<>());
-                System.out.println();
+        Hypothesis targetHypothesis = new Hypothesis(new Fact("u", "verdadero"), new Condition[0]);
+        System.out.println("Encadenamiento hacia atrás para la hipótesis: " + targetHypothesis);
+        boolean isValid = backwardChaining(targetHypothesis, new ArrayList<>());
 
-                facts.add(hypothesis.fact);
-            } else {
-                System.out.println("La hipótesis " + hypothesis + " no es correcta.");
-            }
-            System.out.println();
-        }
-
-        System.out.println("Array de hechos final:");
-        for (Fact fact : facts) {
-            System.out.println(fact);
+        if (isValid) {
+            System.out.println("La hipótesis " + targetHypothesis + " es válida.");
+        } else {
+            System.out.println("La hipótesis " + targetHypothesis + " no es válida.");
         }
     }
+
+    private static boolean backwardChaining(Hypothesis targetHypothesis, ArrayList<Hypothesis> appliedRules) {
+        for (Hypothesis hypothesis : hypotheses) {
+            if (hypothesis.fact.attribute.equals(targetHypothesis.fact.attribute)
+                    && hypothesis.fact.value.equals(targetHypothesis.fact.value)) {
+                if (appliedRules.contains(hypothesis)) {
+                    // Ciclo infinito
+                    return false;
+                }
+                appliedRules.add(hypothesis);
+                boolean allConditionsSatisfied = true;
+
+                Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
+                while (conditionIterator.hasNext()) {
+                    Condition condition = conditionIterator.next();
+                    boolean conditionSatisfied = false;
+                    for (Fact fact : facts) {
+                        if (condition.attribute.equals(fact.attribute) && condition.value.equals(fact.value)) {
+                            conditionSatisfied = true;
+                            break;
+                        }
+                    }
+                    if (!conditionSatisfied) {
+                        conditionSatisfied = backwardChaining(new Hypothesis(condition, new Condition[0]), appliedRules);
+                    }
+                    if (!conditionSatisfied) {
+                        allConditionsSatisfied = false;
+                        break;
+                    }
+                }
+                /*
+                for (Condition condition : hypothesis.conditions.head) {
+                    boolean conditionSatisfied = false;
+                    for (Fact fact : facts) {
+                        if (condition.attribute.equals(fact.attribute) && condition.value.equals(fact.value)) {
+                            conditionSatisfied = true;
+                            break;
+                        }
+                    }
+                    if (!conditionSatisfied) {
+                        conditionSatisfied = backwardChaining(condition, appliedRules);
+                    }
+                    if (!conditionSatisfied) {
+                        allConditionsSatisfied = false;
+                        break;
+                    }
+                }*/
+                if (allConditionsSatisfied) {
+                    printAppliedRules(appliedRules);
+                    return true;
+                } else {
+                    appliedRules.remove(hypothesis);
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void printAppliedRules(ArrayList<Hypothesis> appliedRules) {
+    int ruleCount = 1;
+    for (Hypothesis hypothesis : appliedRules) {
+        if (hypothesis.conditions.head == null) {
+            System.out.println("R" + ruleCount + ". " + hypothesis.fact);
+        } else {
+            System.out.print("R" + ruleCount + ". Si ");
+            Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
+            while (conditionIterator.hasNext()) {
+                Condition condition = conditionIterator.next();
+                System.out.print(condition);
+                if (conditionIterator.hasNext()) {
+                    System.out.print(" y ");
+                }
+            }
+            System.out.println(", entonces " + hypothesis.fact + ".");
+        }
+        ruleCount++;
+    }
+}
 
     private static boolean isHypothesisValid(Hypothesis hypothesis, ArrayList<Hypothesis> appliedRules) {
         Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
