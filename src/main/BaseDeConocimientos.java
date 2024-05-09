@@ -153,22 +153,10 @@ class DoubleLinkedList<T> {
 
 public class BaseDeConocimientos {
 
-    /*static ArrayList<Fact> facts = new ArrayList<>(Arrays.asList(
-            new Fact("branquias", "si"),
-            new Fact("habitat", "acuatico")
-    ));
-
-    static Hypothesis[] hypotheses = {
-        new Hypothesis(new Fact("animal", "pez"),
-        new Condition[]{
-            new Condition("branquias", "si"),
-            new Condition("habitat", "acuatico")
-        })
-    };*/
     static ArrayList<Fact> facts = new ArrayList<>();
     static ArrayList<Hypothesis> hypotheses = new ArrayList<>();
     static DoubleLinkedList<Hypothesis> hypothesisList = new DoubleLinkedList<>();
-    
+
     public static void main(String[] args) {
         try {
             // Leer hechos desde el archivo "hechos.txt"
@@ -191,12 +179,22 @@ public class BaseDeConocimientos {
                     String value = parts[1];
                     Fact fact = new Fact(attribute, value);
                     List<Condition> conditions = new ArrayList<>();
+                    boolean validHypothesis = true;
                     for (int i = 2; i < parts.length; i += 2) {
-                        conditions.add(new Condition(parts[i], parts[i + 1]));
+                        Condition condition = new Condition(parts[i], parts[i + 1]);
+                        if (condition.attribute.equals(attribute) && condition.value.equals(value)) {
+                            validHypothesis = false;
+                            break;
+                        }
+                        conditions.add(condition);
                     }
-                    Hypothesis hypothesis = new Hypothesis(fact, conditions.toArray(new Condition[0]));
-                    hypotheses.add(hypothesis);
-                    hypothesisList.addLast(hypothesis);
+                    if (validHypothesis) {
+                        Hypothesis hypothesis = new Hypothesis(fact, conditions.toArray(new Condition[0]));
+                        hypotheses.add(hypothesis);
+                        hypothesisList.addLast(hypothesis);
+                    } else {
+                        System.out.println("La regla (" + fact + " -> " + conditions.toString() + ") no se ha podido añadir al grafo debido a que una de las condiciones es la misma hipótesis.");
+                    }
                 }
             }
             hypothesesReader.close();
@@ -219,7 +217,7 @@ public class BaseDeConocimientos {
                 System.out.println();
             }
 
-            Scanner scanner = new Scanner(System.in); 
+            Scanner scanner = new Scanner(System.in);
             System.out.println("\nIngrese la hipótesis para el encadenamiento hacia atrás (hipotesis valor):");
             String input = scanner.nextLine();
             String[] parts = input.split(" ");
@@ -282,62 +280,6 @@ public class BaseDeConocimientos {
         return false;
     }
 
-    /*private static boolean backwardChaining(Hypothesis targetHypothesis, ArrayList<Hypothesis> appliedRules) {
-        for (Hypothesis hypothesis : hypotheses) {
-            if (hypothesis.fact.attribute.equals(targetHypothesis.fact.attribute)
-                    && hypothesis.fact.value.equals(targetHypothesis.fact.value)) {
-                if (appliedRules.contains(hypothesis)) {
-                    // Ciclo infinito
-                    return false;
-                }
-                appliedRules.add(hypothesis);
-                boolean allConditionsSatisfied = true;
-
-                Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
-                while (conditionIterator.hasNext()) {
-                    Condition condition = conditionIterator.next();
-                    boolean conditionSatisfied = false;
-                    for (Fact fact : facts) {
-                        if (condition.attribute.equals(fact.attribute) && condition.value.equals(fact.value)) {
-                            conditionSatisfied = true;
-                            break;
-                        }
-                    }
-                    if (!conditionSatisfied) {
-                        conditionSatisfied = backwardChaining(new Hypothesis(condition, new Condition[0]), appliedRules);
-                    }
-                    if (!conditionSatisfied) {
-                        allConditionsSatisfied = false;
-                        break;
-                    }
-                }
-                /*
-                for (Condition condition : hypothesis.conditions.head) {
-                    boolean conditionSatisfied = false;
-                    for (Fact fact : facts) {
-                        if (condition.attribute.equals(fact.attribute) && condition.value.equals(fact.value)) {
-                            conditionSatisfied = true;
-                            break;
-                        }
-                    }
-                    if (!conditionSatisfied) {
-                        conditionSatisfied = backwardChaining(condition, appliedRules);
-                    }
-                    if (!conditionSatisfied) {
-                        allConditionsSatisfied = false;
-                        break;
-                    }
-                }//
-                if (allConditionsSatisfied) {
-                    printAppliedRules(appliedRules);
-                    return true;
-                } else {
-                    appliedRules.remove(hypothesis);
-                }
-            }
-        }
-        return false;
-    }*/
     private static void printAppliedRules(ArrayList<Hypothesis> solutionPath) {
         int ruleCount = 1;
         for (int i = solutionPath.size() - 1; i >= 0; i--) {
@@ -360,6 +302,8 @@ public class BaseDeConocimientos {
             ruleCount++;
         }
     }
+    
+    
 
     private static boolean isHypothesisValid(Hypothesis hypothesis, ArrayList<Hypothesis> appliedRules) {
         Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
