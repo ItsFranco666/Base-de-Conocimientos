@@ -150,27 +150,15 @@ class DoubleLinkedList<T> {
 public class BaseDeConocimientos {
 
     static ArrayList<Fact> facts = new ArrayList<>(Arrays.asList(
-            new Fact("a", "verdadero"),
-            new Fact("b", "verdadero"),
-            new Fact("c", "verdadero"),
-            new Fact("w", "verdadero")
+            new Fact("branquias", "si"),
+            new Fact("habitat", "acuatico")
     ));
 
     static Hypothesis[] hypotheses = {
-        new Hypothesis(new Fact("d", "verdadero"),
+        new Hypothesis(new Fact("animal", "pez"),
         new Condition[]{
-            new Condition("a", "verdadero"),
-            new Condition("b", "verdadero")
-        }),
-        new Hypothesis(new Fact("h", "verdadero"),
-        new Condition[]{
-            new Condition("b", "verdadero"),
-            new Condition("c", "verdadero")
-        }),
-        new Hypothesis(new Fact("u", "verdadero"),
-        new Condition[]{
-            new Condition("h", "verdadero"),
-            new Condition("w", "verdadero")
+            new Condition("branquias", "si"),
+            new Condition("habitat", "acuatico")
         })
     };
 
@@ -191,7 +179,7 @@ public class BaseDeConocimientos {
         System.out.println("Lista doblemente enlazada de hipótesis:");
         System.out.println(hypothesisList + "\n");
 
-        Hypothesis targetHypothesis = new Hypothesis(new Fact("u", "verdadero"), new Condition[0]);
+        Hypothesis targetHypothesis = new Hypothesis(new Fact("animal", "pez"), new Condition[0]);
         System.out.println("Encadenamiento hacia atrás para la hipótesis: " + targetHypothesis);
         boolean isValid = backwardChaining(targetHypothesis, new ArrayList<>(), new ArrayList<>());
 
@@ -200,6 +188,20 @@ public class BaseDeConocimientos {
         } else {
             System.out.println("La hipótesis " + targetHypothesis + " no es válida.");
         }
+        System.out.println("Lista de hipótesis y condiciones:");
+        for (Hypothesis hypothesis : hypotheses) {
+            System.out.print(hypothesis + " -> ");
+            Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
+            while (conditionIterator.hasNext()) {
+                Condition condition = conditionIterator.next();
+                System.out.print(condition);
+                if (conditionIterator.hasNext()) {
+                    System.out.print(" -> ");
+                }
+            }
+            System.out.println();
+        }
+
     }
 
     private static boolean backwardChaining(Hypothesis targetHypothesis, ArrayList<Hypothesis> appliedRules, ArrayList<Hypothesis> solutionPath) {
@@ -300,29 +302,28 @@ public class BaseDeConocimientos {
         }
         return false;
     }*/
-
     private static void printAppliedRules(ArrayList<Hypothesis> solutionPath) {
-    int ruleCount = solutionPath.size();
-    for (int i = solutionPath.size() - 1; i >= 0; i--) {
-        Hypothesis hypothesis = solutionPath.get(i);
-        System.out.print("R" + ruleCount + ". ");
-        if (hypothesis.conditions.head == null) {
-            System.out.println(hypothesis.fact);
-        } else {
-            System.out.print("Si ");
-            Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
-            while (conditionIterator.hasNext()) {
-                Condition condition = conditionIterator.next();
-                System.out.print(condition);
-                if (conditionIterator.hasNext()) {
-                    System.out.print(" y ");
+        int ruleCount = 1;
+        for (int i = solutionPath.size() - 1; i >= 0; i--) {
+            Hypothesis hypothesis = solutionPath.get(i);
+            System.out.print("R" + ruleCount + ". ");
+            if (hypothesis.conditions.head == null) {
+                System.out.println(hypothesis.fact);
+            } else {
+                System.out.print("Si ");
+                Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
+                while (conditionIterator.hasNext()) {
+                    Condition condition = conditionIterator.next();
+                    System.out.print(condition);
+                    if (conditionIterator.hasNext()) {
+                        System.out.print(" y ");
+                    }
                 }
+                System.out.println(", entonces " + hypothesis.fact + ".");
             }
-            System.out.println(", entonces " + hypothesis.fact + ".");
+            ruleCount++;
         }
-        ruleCount--;
     }
-}
 
     private static boolean isHypothesisValid(Hypothesis hypothesis, ArrayList<Hypothesis> appliedRules) {
         Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
