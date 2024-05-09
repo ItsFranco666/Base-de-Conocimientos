@@ -4,6 +4,9 @@ package main;
  *
  * @author Andres
  */
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -164,76 +167,77 @@ public class BaseDeConocimientos {
     };*/
     static ArrayList<Fact> facts = new ArrayList<>();
     static ArrayList<Hypothesis> hypotheses = new ArrayList<>();
-
+    static DoubleLinkedList<Hypothesis> hypothesisList = new DoubleLinkedList<>();
+    
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Ingrese los hechos (atributo valor) o 'fin' para terminar:");
-        while (true) {
-            String input = scanner.nextLine();
-            if (input.equalsIgnoreCase("fin")) {
-                break;
+        try {
+            // Leer hechos desde el archivo "hechos.txt"
+            BufferedReader factsReader = new BufferedReader(new FileReader("hechos.txt"));
+            String line;
+            while ((line = factsReader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts.length == 2) {
+                    facts.add(new Fact(parts[0], parts[1]));
+                }
             }
+            factsReader.close();
+
+            // Leer hipótesis desde el archivo "hipotesis.txt"
+            BufferedReader hypothesesReader = new BufferedReader(new FileReader("hipotesis.txt"));
+            while ((line = hypothesesReader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts.length >= 3 && (parts.length - 2) % 2 == 0) {
+                    String attribute = parts[0];
+                    String value = parts[1];
+                    Fact fact = new Fact(attribute, value);
+                    List<Condition> conditions = new ArrayList<>();
+                    for (int i = 2; i < parts.length; i += 2) {
+                        conditions.add(new Condition(parts[i], parts[i + 1]));
+                    }
+                    Hypothesis hypothesis = new Hypothesis(fact, conditions.toArray(new Condition[0]));
+                    hypotheses.add(hypothesis);
+                    hypothesisList.addLast(hypothesis);
+                }
+            }
+            hypothesesReader.close();
+
+            System.out.println("Hechos:");
+            for (Fact fact : facts) {
+                System.out.println(fact);
+            }
+            System.out.println("\nHipótesis:");
+            for (Hypothesis hypothesis : hypotheses) {
+                System.out.print(hypothesis + " -> ");
+                Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
+                while (conditionIterator.hasNext()) {
+                    Condition condition = conditionIterator.next();
+                    System.out.print(condition);
+                    if (conditionIterator.hasNext()) {
+                        System.out.print(" -> ");
+                    }
+                }
+                System.out.println();
+            }
+
+            Scanner scanner = new Scanner(System.in); 
+            System.out.println("\nIngrese la hipótesis para el encadenamiento hacia atrás (hipotesis valor):");
+            String input = scanner.nextLine();
             String[] parts = input.split(" ");
             if (parts.length == 2) {
-                facts.add(new Fact(parts[0], parts[1]));
-            } else {
-                System.out.println("Formato inválido. Intente nuevamente.");
-            }
-        }
+                Hypothesis targetHypothesis = new Hypothesis(new Fact(parts[0], parts[1]), new Condition[0]);
+                boolean isValid = backwardChaining(targetHypothesis, new ArrayList<>(), new ArrayList<>());
 
-        System.out.println("\nIngrese las hipótesis y sus condiciones (hipotesis valor condicion1 valor condicion2 valor ...) o 'fin' para terminar:");
-        while (true) {
-            String input = scanner.nextLine();
-            if (input.equalsIgnoreCase("fin")) {
-                break;
-            }
-            String[] parts = input.split(" ");
-            if (parts.length >= 3 && (parts.length - 2) % 2 == 0) {
-                String attribute = parts[0];
-                String value = parts[1];
-                Fact fact = new Fact(attribute, value);
-                List<Condition> conditions = new ArrayList<>();
-                for (int i = 2; i < parts.length; i += 2) {
-                    conditions.add(new Condition(parts[i], parts[i + 1]));
+                if (isValid) {
+                    System.out.println("La hipótesis " + targetHypothesis.fact + " es válida.");
+                } else {
+                    System.out.println("La hipótesis " + targetHypothesis.fact + " no es válida.");
                 }
-                hypotheses.add(new Hypothesis(fact, conditions.toArray(new Condition[0])));
             } else {
-                System.out.println("Formato inválido. Intente nuevamente.");
+                System.out.println("Formato inválido para la hipótesis.");
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        
-        System.out.println("Lista de hipótesis y condiciones:");
-        for (Hypothesis hypothesis : hypotheses) {
-            System.out.print(hypothesis + " -> ");
-            Iterator<Condition> conditionIterator = hypothesis.conditions.iterator();
-            while (conditionIterator.hasNext()) {
-                Condition condition = conditionIterator.next();
-                System.out.print(condition);
-                if (conditionIterator.hasNext()) {
-                    System.out.print(" -> ");
-                }
-            }
-            System.out.println();
-        }
-        
-        System.out.println("\nIngrese la hipótesis para el encadenamiento hacia atrás (hipotesis valor):");
-        String input = scanner.nextLine();
-        String[] parts = input.split(" ");
-        if (parts.length == 2) {
-            Hypothesis targetHypothesis = new Hypothesis(new Fact(parts[0], parts[1]), new Condition[0]);
-            boolean isValid = backwardChaining(targetHypothesis, new ArrayList<>(), new ArrayList<>());
-
-            if (isValid) {
-                System.out.println("La hipótesis " + targetHypothesis.fact + " es válida.");
-            } else {
-                System.out.println("La hipótesis " + targetHypothesis.fact + " no es válida.");
-            }
-        } else {
-            System.out.println("Formato inválido para la hipótesis.");
-        }
-
-        scanner.close();
     }
 
     private static boolean backwardChaining(Hypothesis targetHypothesis, ArrayList<Hypothesis> appliedRules, ArrayList<Hypothesis> solutionPath) {
